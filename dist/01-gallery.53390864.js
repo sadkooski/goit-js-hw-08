@@ -142,15 +142,15 @@
       this[globalName] = mainExports;
     }
   }
-})({"8EXaa":[function(require,module,exports) {
-"use strict";
+})({"9VJAZ":[function(require,module,exports) {
 var global = arguments[3];
 var HMR_HOST = null;
 var HMR_PORT = null;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d6ea1d42532a7575";
 module.bundle.HMR_BUNDLE_ID = "c2a4860653390864";
-/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, importScripts */ /*::
+"use strict";
+/* global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE, chrome, browser, globalThis, __parcel__import__, __parcel__importScripts__, ServiceWorkerGlobalScope */ /*::
 import type {
   HMRAsset,
   HMRMessage,
@@ -158,7 +158,7 @@ import type {
 interface ParcelRequire {
   (string): mixed;
   cache: {|[string]: ParcelModule|};
-  hotData: mixed;
+  hotData: {|[string]: mixed|};
   Module: any;
   parent: ?ParcelRequire;
   isParcelRequire: true;
@@ -180,6 +180,8 @@ interface ParcelModule {
 interface ExtensionContext {
   runtime: {|
     reload(): void,
+    getURL(url: string): string;
+    getManifest(): {manifest_version: number, ...};
   |};
 }
 declare var module: {bundle: ParcelRequire, ...};
@@ -189,12 +191,16 @@ declare var HMR_ENV_HASH: string;
 declare var HMR_SECURE: boolean;
 declare var chrome: ExtensionContext;
 declare var browser: ExtensionContext;
+declare var __parcel__import__: (string) => Promise<void>;
+declare var __parcel__importScripts__: (string) => Promise<void>;
+declare var globalThis: typeof self;
+declare var ServiceWorkerGlobalScope: Object;
 */ var OVERLAY_ID = "__parcel__error__overlay__";
 var OldModule = module.bundle.Module;
 function Module(moduleName) {
     OldModule.call(this, moduleName);
     this.hot = {
-        data: module.bundle.hotData,
+        data: module.bundle.hotData[moduleName],
         _acceptCallbacks: [],
         _disposeCallbacks: [],
         accept: function(fn) {
@@ -204,10 +210,11 @@ function Module(moduleName) {
             this._disposeCallbacks.push(fn);
         }
     };
-    module.bundle.hotData = undefined;
+    module.bundle.hotData[moduleName] = undefined;
 }
 module.bundle.Module = Module;
-var checkedAssets, acceptedAssets, assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
+module.bundle.hotData = {};
+var checkedAssets, assetsToDispose, assetsToAccept /*: Array<[ParcelRequire, string]> */ ;
 function getHostname() {
     return HMR_HOST || (location.protocol.indexOf("http") === 0 ? location.hostname : "localhost");
 }
@@ -219,7 +226,8 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
     var hostname = getHostname();
     var port = getPort();
     var protocol = HMR_SECURE || location.protocol == "https:" && !/localhost|127.0.0.1|0.0.0.0/.test(hostname) ? "wss" : "ws";
-    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/"); // Safari doesn't support sourceURL in error stacks.
+    var ws = new WebSocket(protocol + "://" + hostname + (port ? ":" + port : "") + "/"); // Web extension context
+    var extCtx = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome; // Safari doesn't support sourceURL in error stacks.
     // eval may also be disabled via CSP, so do a quick check.
     var supportsSourceURL = false;
     try {
@@ -229,8 +237,8 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
     } // $FlowFixMe
     ws.onmessage = async function(event) {
         checkedAssets = {} /*: {|[string]: boolean|} */ ;
-        acceptedAssets = {} /*: {|[string]: boolean|} */ ;
         assetsToAccept = [];
+        assetsToDispose = [];
         var data = JSON.parse(event.data);
         if (data.type === "update") {
             // Remove error overlay if there is one
@@ -242,17 +250,24 @@ if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== "undefined") {
             if (handled) {
                 console.clear(); // Dispatch custom event so other runtimes (e.g React Refresh) are aware.
                 if (typeof window !== "undefined" && typeof CustomEvent !== "undefined") window.dispatchEvent(new CustomEvent("parcelhmraccept"));
-                await hmrApplyUpdates(assets);
-                for(var i = 0; i < assetsToAccept.length; i++){
-                    var id = assetsToAccept[i][1];
-                    if (!acceptedAssets[id]) hmrAcceptRun(assetsToAccept[i][0], id);
+                await hmrApplyUpdates(assets); // Dispose all old assets.
+                let processedAssets = {} /*: {|[string]: boolean|} */ ;
+                for(let i = 0; i < assetsToDispose.length; i++){
+                    let id = assetsToDispose[i][1];
+                    if (!processedAssets[id]) {
+                        hmrDispose(assetsToDispose[i][0], id);
+                        processedAssets[id] = true;
+                    }
+                } // Run accept callbacks. This will also re-execute other disposed assets in topological order.
+                processedAssets = {};
+                for(let i = 0; i < assetsToAccept.length; i++){
+                    let id = assetsToAccept[i][1];
+                    if (!processedAssets[id]) {
+                        hmrAccept(assetsToAccept[i][0], id);
+                        processedAssets[id] = true;
+                    }
                 }
-            } else if ("reload" in location) location.reload();
-            else {
-                // Web extension context
-                var ext = typeof chrome === "undefined" ? typeof browser === "undefined" ? null : browser : chrome;
-                if (ext && ext.runtime && ext.runtime.reload) ext.runtime.reload();
-            }
+            } else fullReload();
         }
         if (data.type === "error") {
             // Log parcel errors to console
@@ -279,7 +294,7 @@ function removeErrorOverlay() {
     var overlay = document.getElementById(OVERLAY_ID);
     if (overlay) {
         overlay.remove();
-        console.log("[parcel] \u2728 Error resolved");
+        console.log("[parcel] ✨ Error resolved");
     }
 }
 function createErrorOverlay(diagnostics) {
@@ -308,6 +323,10 @@ ${frame.code}`;
     errorHTML += "</div>";
     overlay.innerHTML = errorHTML;
     return overlay;
+}
+function fullReload() {
+    if ("reload" in location) location.reload();
+    else if (extCtx && extCtx.runtime && extCtx.runtime.reload) extCtx.runtime.reload();
 }
 function getParents(bundle, id) /*: Array<[ParcelRequire, string]> */ {
     var modules = bundle.modules;
@@ -349,6 +368,32 @@ function reloadCSS() {
         cssTimeout = null;
     }, 50);
 }
+function hmrDownload(asset) {
+    if (asset.type === "js") {
+        if (typeof document !== "undefined") {
+            let script = document.createElement("script");
+            script.src = asset.url + "?t=" + Date.now();
+            if (asset.outputFormat === "esmodule") script.type = "module";
+            return new Promise((resolve, reject)=>{
+                var _document$head;
+                script.onload = ()=>resolve(script);
+                script.onerror = reject;
+                (_document$head = document.head) === null || _document$head === void 0 || _document$head.appendChild(script);
+            });
+        } else if (typeof importScripts === "function") {
+            // Worker scripts
+            if (asset.outputFormat === "esmodule") return import(asset.url + "?t=" + Date.now());
+            else return new Promise((resolve, reject)=>{
+                try {
+                    importScripts(asset.url + "?t=" + Date.now());
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+    }
+}
 async function hmrApplyUpdates(assets) {
     global.parcelHotUpdate = Object.create(null);
     let scriptsToRemove;
@@ -361,24 +406,20 @@ async function hmrApplyUpdates(assets) {
         // This path is also taken if a CSP disallows eval.
         if (!supportsSourceURL) {
             let promises = assets.map((asset)=>{
-                if (asset.type === "js") {
-                    if (typeof document !== "undefined") {
-                        let script = document.createElement("script");
-                        script.src = asset.url;
-                        return new Promise((resolve, reject)=>{
-                            var _document$head;
-                            script.onload = ()=>resolve(script);
-                            script.onerror = reject;
-                            (_document$head = document.head) === null || _document$head === void 0 || _document$head.appendChild(script);
-                        });
-                    } else if (typeof importScripts === "function") return new Promise((resolve, reject)=>{
-                        try {
-                            importScripts(asset.url);
-                        } catch (err) {
-                            reject(err);
+                var _hmrDownload;
+                return (_hmrDownload = hmrDownload(asset)) === null || _hmrDownload === void 0 ? void 0 : _hmrDownload.catch((err)=>{
+                    // Web extension bugfix for Chromium
+                    // https://bugs.chromium.org/p/chromium/issues/detail?id=1255412#c12
+                    if (extCtx && extCtx.runtime && extCtx.runtime.getManifest().manifest_version == 3) {
+                        if (typeof ServiceWorkerGlobalScope != "undefined" && global instanceof ServiceWorkerGlobalScope) {
+                            extCtx.runtime.reload();
+                            return;
                         }
-                    });
-                }
+                        asset.url = extCtx.runtime.getURL("/__parcel_hmr_proxy__?url=" + encodeURIComponent(asset.url + "?t=" + Date.now()));
+                        return hmrDownload(asset);
+                    }
+                    throw err;
+                });
             });
             scriptsToRemove = await Promise.all(promises);
         }
@@ -415,6 +456,7 @@ function hmrApply(bundle, asset) {
             if (supportsSourceURL) // Global eval. We would use `new Function` here but browser
             // support for source maps is better with eval.
             (0, eval)(asset.output);
+             // $FlowFixMe
             let fn = global.parcelHotUpdate[asset.id];
             modules[asset.id] = [
                 fn,
@@ -423,23 +465,23 @@ function hmrApply(bundle, asset) {
         } else if (bundle.parent) hmrApply(bundle.parent, asset);
     }
 }
-function hmrDelete(bundle, id1) {
+function hmrDelete(bundle, id) {
     let modules = bundle.modules;
     if (!modules) return;
-    if (modules[id1]) {
+    if (modules[id]) {
         // Collect dependencies that will become orphaned when this module is deleted.
-        let deps = modules[id1][1];
+        let deps = modules[id][1];
         let orphans = [];
         for(let dep in deps){
             let parents = getParents(module.bundle.root, deps[dep]);
             if (parents.length === 1) orphans.push(deps[dep]);
         } // Delete the module. This must be done before deleting dependencies in case of circular dependencies.
-        delete modules[id1];
-        delete bundle.cache[id1]; // Now delete the orphans.
+        delete modules[id];
+        delete bundle.cache[id]; // Now delete the orphans.
         orphans.forEach((id)=>{
             hmrDelete(module.bundle.root, id);
         });
-    } else if (bundle.parent) hmrDelete(bundle.parent, id1);
+    } else if (bundle.parent) hmrDelete(bundle.parent, id);
 }
 function hmrAcceptCheck(bundle, id, depsByBundle) {
     if (hmrAcceptCheckOne(bundle, id, depsByBundle)) return true;
@@ -476,30 +518,42 @@ function hmrAcceptCheckOne(bundle, id, depsByBundle) {
     if (checkedAssets[id]) return true;
     checkedAssets[id] = true;
     var cached = bundle.cache[id];
-    assetsToAccept.push([
+    assetsToDispose.push([
         bundle,
         id
     ]);
-    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) return true;
+    if (!cached || cached.hot && cached.hot._acceptCallbacks.length) {
+        assetsToAccept.push([
+            bundle,
+            id
+        ]);
+        return true;
+    }
 }
-function hmrAcceptRun(bundle, id) {
+function hmrDispose(bundle, id) {
     var cached = bundle.cache[id];
-    bundle.hotData = {};
-    if (cached && cached.hot) cached.hot.data = bundle.hotData;
+    bundle.hotData[id] = {};
+    if (cached && cached.hot) cached.hot.data = bundle.hotData[id];
     if (cached && cached.hot && cached.hot._disposeCallbacks.length) cached.hot._disposeCallbacks.forEach(function(cb) {
-        cb(bundle.hotData);
+        cb(bundle.hotData[id]);
     });
     delete bundle.cache[id];
-    bundle(id);
-    cached = bundle.cache[id];
+}
+function hmrAccept(bundle, id) {
+    // Execute the module.
+    bundle(id); // Run the accept callbacks in the new version of the module.
+    var cached = bundle.cache[id];
     if (cached && cached.hot && cached.hot._acceptCallbacks.length) cached.hot._acceptCallbacks.forEach(function(cb) {
         var assetsToAlsoAccept = cb(function() {
             return getParents(module.bundle.root, id);
         });
-        if (assetsToAlsoAccept && assetsToAccept.length) // $FlowFixMe[method-unbinding]
-        assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
+        if (assetsToAlsoAccept && assetsToAccept.length) {
+            assetsToAlsoAccept.forEach(function(a) {
+                hmrDispose(a[0], a[1]);
+            }); // $FlowFixMe[method-unbinding]
+            assetsToAccept.push.apply(assetsToAccept, assetsToAlsoAccept);
+        }
     });
-    acceptedAssets[id] = true;
 }
 
 },{}],"6XVkV":[function(require,module,exports) {
@@ -508,14 +562,14 @@ var _simplelightbox = require("simplelightbox");
 var _simplelightboxDefault = parcelHelpers.interopDefault(_simplelightbox);
 var _simpleLightboxMinCss = require("simplelightbox/dist/simple-lightbox.min.css");
 // Add imports above this line
-var _galleryItems = require("./gallery-items");
+var _galleryItemsJs = require("./gallery-items.js");
 console.log((0, _simplelightboxDefault.default));
 // Change code below this line
 const gallery = document.querySelector(".gallery");
 function createImagesGallery() {
     gallery.classList.add("gallery");
     // console.log(gallery.classList);
-    for (const item of (0, _galleryItems.galleryItems)){
+    for (const item of (0, _galleryItemsJs.galleryItems)){
         let htmlImageString = `<li class="gallery__link">
      <a class="gallery__item" href="${item.original}">
         <img 
@@ -535,109 +589,27 @@ new (0, _simplelightboxDefault.default)(".gallery a", {
     captionDelay: 250,
     captionsData: "alt"
 });
-console.log((0, _galleryItems.galleryItems));
+console.log((0, _galleryItemsJs.galleryItems));
 
-},{"simplelightbox/dist/simple-lightbox.min.css":"kaxSc","./gallery-items":"9C7dK","simplelightbox":"9ydBq","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"kaxSc":[function() {},{}],"9C7dK":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "galleryItems", ()=>galleryItems);
-const galleryItems = [
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/14/16/43/rchids-4202820__480.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/14/16/43/rchids-4202820_1280.jpg",
-        description: "Hokkaido Flower"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/14/22/05/container-4203677__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/14/22/05/container-4203677_1280.jpg",
-        description: "Container Haulage Freight"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/16/09/47/beach-4206785__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/16/09/47/beach-4206785_1280.jpg",
-        description: "Aerial Beach View"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2016/11/18/16/19/flowers-1835619__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2016/11/18/16/19/flowers-1835619_1280.jpg",
-        description: "Flower Blooms"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2018/09/13/10/36/mountains-3674334__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2018/09/13/10/36/mountains-3674334_1280.jpg",
-        description: "Alpine Mountains"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/16/23/04/landscape-4208571__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/16/23/04/landscape-4208571_1280.jpg",
-        description: "Mountain Lake Sailing"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/17/09/27/the-alps-4209272__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/17/09/27/the-alps-4209272_1280.jpg",
-        description: "Alpine Spring Meadows"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/16/21/10/landscape-4208255__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/16/21/10/landscape-4208255_1280.jpg",
-        description: "Nature Landscape"
-    },
-    {
-        preview: "https://cdn.pixabay.com/photo/2019/05/17/04/35/lighthouse-4208843__340.jpg",
-        original: "https://cdn.pixabay.com/photo/2019/05/17/04/35/lighthouse-4208843_1280.jpg",
-        description: "Lighthouse Coast Sea"
-    }, 
-];
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
-},{}],"9ydBq":[function(require,module,exports) {
+},{"simplelightbox":"9ydBq","simplelightbox/dist/simple-lightbox.min.css":"kaxSc","./gallery-items.js":"9C7dK","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9ydBq":[function(require,module,exports) {
 /*!
 	By André Rinas, www.andrerinas.de
 	Documentation, www.simplelightbox.com
 	Available for use under the MIT License
 	Version 2.13.0
-*/ "use strict";
-var global = arguments[3];
+*/ var global = arguments[3];
+"use strict";
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 exports["default"] = void 0;
-function _typeof(obj1) {
+function _typeof(obj) {
     "@babel/helpers - typeof";
     return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(obj) {
         return typeof obj;
     } : function(obj) {
         return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    }, _typeof(obj1);
+    }, _typeof(obj);
 }
 function _createForOfIteratorHelper(o, allowArrayLike) {
     var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
@@ -744,9 +716,9 @@ function _defineProperty(obj, key, value) {
     return obj;
 }
 var SimpleLightbox = /*#__PURE__*/ function() {
-    function SimpleLightbox1(elements, options) {
+    function SimpleLightbox(elements, options) {
         var _this = this;
-        _classCallCheck(this, SimpleLightbox1);
+        _classCallCheck(this, SimpleLightbox);
         _defineProperty(this, "defaultOptions", {
             sourceAttr: "href",
             overlay: true,
@@ -934,7 +906,7 @@ var SimpleLightbox = /*#__PURE__*/ function() {
         }, this.options.throttleInterval));
         this.addEvents();
     }
-    _createClass(SimpleLightbox1, [
+    _createClass(SimpleLightbox, [
         {
             key: "checkPassiveEventsSupport",
             value: function checkPassiveEventsSupport() {
@@ -1825,13 +1797,13 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                         var element = _step5.value;
                         element.style.opacity = parseFloat(element) || window.getComputedStyle(element).getPropertyValue("opacity");
                     }
-                } catch (err1) {
-                    _iterator5.e(err1);
+                } catch (err) {
+                    _iterator5.e(err);
                 } finally{
                     _iterator5.f();
                 }
                 this.isFadeIn = false;
-                var step = 16.66666 / (duration || this.options.fadeSpeed), fade1 = function fade() {
+                var step = 16.66666 / (duration || this.options.fadeSpeed), fade = function fade() {
                     var currentOpacity = parseFloat(elements[0].style.opacity);
                     if ((currentOpacity -= step) < 0) {
                         var _iterator6 = _createForOfIteratorHelper(elements), _step6;
@@ -1863,7 +1835,7 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                         requestAnimationFrame(fade);
                     }
                 };
-                fade1();
+                fade();
             }
         },
         {
@@ -1880,13 +1852,13 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                             element.style.display = display || "block";
                         }
                     }
-                } catch (err2) {
-                    _iterator8.e(err2);
+                } catch (err) {
+                    _iterator8.e(err);
                 } finally{
                     _iterator8.f();
                 }
                 this.isFadeIn = true;
-                var opacityTarget = parseFloat(elements[0].dataset.opacityTarget || 1), step = 16.66666 * opacityTarget / (duration || this.options.fadeSpeed), fade2 = function fade() {
+                var opacityTarget = parseFloat(elements[0].dataset.opacityTarget || 1), step = 16.66666 * opacityTarget / (duration || this.options.fadeSpeed), fade = function fade() {
                     var currentOpacity = parseFloat(elements[0].style.opacity);
                     if (!((currentOpacity += step) > opacityTarget)) {
                         var _iterator9 = _createForOfIteratorHelper(elements), _step9;
@@ -1917,7 +1889,7 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                         callback && callback.call(_this11, elements);
                     }
                 };
-                fade2();
+                fade();
             }
         },
         {
@@ -2098,12 +2070,94 @@ var SimpleLightbox = /*#__PURE__*/ function() {
             }
         }
     ]);
-    return SimpleLightbox1;
+    return SimpleLightbox;
 }();
 var _default = SimpleLightbox;
 exports["default"] = _default;
 global.SimpleLightbox = SimpleLightbox;
 
-},{}]},["8EXaa","6XVkV"], "6XVkV", "parcelRequire4c75")
+},{}],"kaxSc":[function() {},{}],"9C7dK":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "galleryItems", ()=>galleryItems);
+const galleryItems = [
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/14/16/43/rchids-4202820__480.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/14/16/43/rchids-4202820_1280.jpg",
+        description: "Hokkaido Flower"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/14/22/05/container-4203677__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/14/22/05/container-4203677_1280.jpg",
+        description: "Container Haulage Freight"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/16/09/47/beach-4206785__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/16/09/47/beach-4206785_1280.jpg",
+        description: "Aerial Beach View"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2016/11/18/16/19/flowers-1835619__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2016/11/18/16/19/flowers-1835619_1280.jpg",
+        description: "Flower Blooms"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2018/09/13/10/36/mountains-3674334__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2018/09/13/10/36/mountains-3674334_1280.jpg",
+        description: "Alpine Mountains"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/16/23/04/landscape-4208571__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/16/23/04/landscape-4208571_1280.jpg",
+        description: "Mountain Lake Sailing"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/17/09/27/the-alps-4209272__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/17/09/27/the-alps-4209272_1280.jpg",
+        description: "Alpine Spring Meadows"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/16/21/10/landscape-4208255__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/16/21/10/landscape-4208255_1280.jpg",
+        description: "Nature Landscape"
+    },
+    {
+        preview: "https://cdn.pixabay.com/photo/2019/05/17/04/35/lighthouse-4208843__340.jpg",
+        original: "https://cdn.pixabay.com/photo/2019/05/17/04/35/lighthouse-4208843_1280.jpg",
+        description: "Lighthouse Coast Sea"
+    }
+];
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}]},["9VJAZ","6XVkV"], "6XVkV", "parcelRequire4c75")
 
 //# sourceMappingURL=01-gallery.53390864.js.map
