@@ -1,4 +1,4 @@
-import Vimeo from '@vimeo/player';
+import Vimeo from '@vimeo/playe';
 
 const iframe = document.querySelector('iframe');
 const player = new Vimeo.Player(iframe);
