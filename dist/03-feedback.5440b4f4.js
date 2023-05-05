@@ -575,6 +575,17 @@ function currentInput(event) {
     }
     localStorage.setItem("feedback-form-state", JSON.stringify(inputsObject));
 }
+function onSubmit(event) {
+    event.preventDefault();
+    const { elements: { email , message  }  } = event.currentTarget;
+    console.log(email.value, message.value);
+    localStorage.clear();
+    emailInput.value = "";
+    messageTextarea.value = "";
+}
+form.addEventListener("input", currentInput);
+form.addEventListener("submit", onSubmit);
+updateInputs();
 function updateInputs() {
     const savedInputs = localStorage.getItem("feedback-form-state");
     console.log(savedInputs);
@@ -583,17 +594,6 @@ function updateInputs() {
     emailInput.value = parsedInputs.email;
     messageTextarea.textContent = parsedInputs.message;
 }
-updateInputs();
-function onSubmit(event) {
-    event.preventDefault();
-    const { elements: { email , message  }  } = event.currentTarget;
-    console.log(email.value, message.value);
-    localStorage.clear();
-    emailInput.value = "";
-    messageTextarea.textContent = "";
-}
-form.addEventListener("input", currentInput);
-form.addEventListener("submit", onSubmit);
 
 },{"lodash.throttle":"bGJVT"}],"bGJVT":[function(require,module,exports) {
 /**

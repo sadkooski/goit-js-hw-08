@@ -17,18 +17,6 @@ function currentInput(event) {
   localStorage.setItem('feedback-form-state', JSON.stringify(inputsObject));
 }
 
-function updateInputs() {
-  const savedInputs = localStorage.getItem('feedback-form-state');
-  console.log(savedInputs);
-  const parsedInputs = JSON.parse(savedInputs);
-  console.log(parsedInputs);
-
-  emailInput.value = parsedInputs.email;
-  messageTextarea.textContent = parsedInputs.message;
-}
-
-updateInputs();
-
 function onSubmit(event) {
   event.preventDefault();
   const {
@@ -38,8 +26,20 @@ function onSubmit(event) {
 
   localStorage.clear();
   emailInput.value = '';
-  messageTextarea.textContent = '';
+  messageTextarea.value = '';
 }
 
 form.addEventListener('input', currentInput);
 form.addEventListener('submit', onSubmit);
+
+updateInputs();
+
+function updateInputs() {
+  const savedInputs = localStorage.getItem('feedback-form-state');
+  console.log(savedInputs);
+  const parsedInputs = JSON.parse(savedInputs);
+  console.log(parsedInputs);
+
+  emailInput.value = parsedInputs.email;
+  messageTextarea.textContent = parsedInputs.message;
+}
