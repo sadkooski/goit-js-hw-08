@@ -5,6 +5,10 @@ const messageTextarea = document.querySelector('textarea');
 const form = document.querySelector('.feedback-form');
 let inputsObject = { email: '', message: '' };
 
+function updateLocalStorage() {
+  localStorage.setItem('feedback-form-state', JSON.stringify(inputsObject));
+}
+
 function currentInput(event) {
   if (event.target.type === 'email') {
     inputsObject.email = event.target.value;
@@ -14,7 +18,7 @@ function currentInput(event) {
     console.log(inputsObject);
   }
 
-  localStorage.setItem('feedback-form-state', JSON.stringify(inputsObject));
+  _.throttle(updateLocalStorage(), 500);
 }
 
 function onSubmit(event) {
