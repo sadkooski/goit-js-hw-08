@@ -1,5 +1,4 @@
-import 'lodash.throttle';
-
+import throttle from 'lodash.throttle';
 const emailInput = document.querySelector('input');
 const messageTextarea = document.querySelector('textarea');
 const form = document.querySelector('.feedback-form');
@@ -17,7 +16,8 @@ function currentInput(event) {
     inputsObject.message = event.target.value;
     console.log(inputsObject);
   }
-  _.throttle(updateLocalStorage(), 500);
+  throttle(updateLocalStorage, 5000);
+  updateLocalStorage();
 }
 
 function onSubmit(event) {

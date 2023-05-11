@@ -557,7 +557,9 @@ function hmrAccept(bundle, id) {
 }
 
 },{}],"eH52W":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _lodashThrottle = require("lodash.throttle");
+var _lodashThrottleDefault = parcelHelpers.interopDefault(_lodashThrottle);
 const emailInput = document.querySelector("input");
 const messageTextarea = document.querySelector("textarea");
 const form = document.querySelector(".feedback-form");
@@ -576,7 +578,8 @@ function currentInput(event) {
         inputsObject.message = event.target.value;
         console.log(inputsObject);
     }
-    _.throttle(updateLocalStorage(), 500);
+    (0, _lodashThrottleDefault.default)(updateLocalStorage, 5000);
+    updateLocalStorage();
 }
 function onSubmit(event) {
     event.preventDefault();
@@ -598,7 +601,7 @@ function updateInputs() {
     messageTextarea.textContent = parsedInputs.message;
 }
 
-},{"lodash.throttle":"bGJVT"}],"bGJVT":[function(require,module,exports) {
+},{"lodash.throttle":"bGJVT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bGJVT":[function(require,module,exports) {
 /**
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -938,6 +941,36 @@ var FUNC_ERROR_TEXT = "Expected a function";
     return isBinary || reIsOctal.test(value) ? freeParseInt(value.slice(2), isBinary ? 2 : 8) : reIsBadHex.test(value) ? NAN : +value;
 }
 module.exports = throttle;
+
+},{}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || dest.hasOwnProperty(key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
 
 },{}]},["jxvN3","eH52W"], "eH52W", "parcelRequire4c75")
 
