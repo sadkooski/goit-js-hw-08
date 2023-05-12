@@ -578,8 +578,7 @@ function currentInput(event) {
         inputsObject.message = event.target.value;
         console.log(inputsObject);
     }
-    (0, _lodashThrottleDefault.default)(updateLocalStorage, 5000);
-    updateLocalStorage();
+    (0, _lodashThrottleDefault.default)(updateLocalStorage(), 5000);
 }
 function onSubmit(event) {
     event.preventDefault();

@@ -16,8 +16,7 @@ function currentInput(event) {
     inputsObject.message = event.target.value;
     console.log(inputsObject);
   }
-  throttle(updateLocalStorage, 5000);
-  updateLocalStorage();
+  throttle(updateLocalStorage(), 5000);
 }
 
 function onSubmit(event) {
