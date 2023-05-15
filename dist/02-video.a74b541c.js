@@ -561,12 +561,13 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _player = require("@vimeo/player");
 var _playerDefault = parcelHelpers.interopDefault(_player);
 var _lodashThrottle = require("lodash.throttle");
+var _lodashThrottleDefault = parcelHelpers.interopDefault(_lodashThrottle);
 const iframe = document.querySelector("iframe");
 const player = new (0, _playerDefault.default)(iframe);
 const onPlay = function(data) {
     localStorage.setItem("videoplayer-current-time", JSON.stringify(data.seconds));
 };
-player.on("timeupdate", onPlay);
+player.on("timeupdate", (0, _lodashThrottleDefault.default)(onPlay, 1000));
 const currentTime = localStorage.getItem("videoplayer-current-time");
 player.setCurrentTime(currentTime).then(function(seconds) {
 // seconds = the actual time that the player seeked to

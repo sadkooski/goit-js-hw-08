@@ -578,7 +578,7 @@ function currentInput(event) {
         inputsObject.message = event.target.value;
         console.log(inputsObject);
     }
-    (0, _lodashThrottleDefault.default)(updateLocalStorage(), 500);
+    updateLocalStorage();
 }
 function onSubmit(event) {
     event.preventDefault();
@@ -588,7 +588,7 @@ function onSubmit(event) {
     emailInput.value = "";
     messageTextarea.value = "";
 }
-form.addEventListener("input", currentInput);
+form.addEventListener("input", (0, _lodashThrottleDefault.default)(currentInput, 1000));
 form.addEventListener("submit", onSubmit);
 updateInputs();
 function updateInputs() {

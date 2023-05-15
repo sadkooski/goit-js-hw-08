@@ -16,7 +16,7 @@ function currentInput(event) {
     inputsObject.message = event.target.value;
     console.log(inputsObject);
   }
-  throttle(updateLocalStorage(), 500);
+  updateLocalStorage();
 }
 
 function onSubmit(event) {
@@ -31,7 +31,7 @@ function onSubmit(event) {
   messageTextarea.value = '';
 }
 
-form.addEventListener('input', currentInput);
+form.addEventListener('input', throttle(currentInput, 1000));
 form.addEventListener('submit', onSubmit);
 
 updateInputs();
