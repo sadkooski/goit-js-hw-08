@@ -568,9 +568,12 @@ let inputsObject = {
     message: ""
 };
 function updateLocalStorage() {
+    inputsObject.email = emailInput.value;
+    inputsObject.message = messageTextarea.value;
     localStorage.setItem("feedback-form-state", JSON.stringify(inputsObject));
 }
 function currentInput(event) {
+    console.log(event.target);
     if (event.target.type === "email") {
         inputsObject.email = event.target.value;
         console.log(inputsObject);
@@ -592,12 +595,14 @@ form.addEventListener("input", (0, _lodashThrottleDefault.default)(currentInput,
 form.addEventListener("submit", onSubmit);
 updateInputs();
 function updateInputs() {
-    const savedInputs = localStorage.getItem("feedback-form-state");
-    console.log(savedInputs);
-    const parsedInputs = JSON.parse(savedInputs);
-    console.log(parsedInputs);
-    emailInput.value = parsedInputs.email;
-    messageTextarea.textContent = parsedInputs.message;
+    if (localStorage.getItem("feedback-form-state")) {
+        const savedInputs = localStorage.getItem("feedback-form-state");
+        console.log(savedInputs);
+        const parsedInputs = JSON.parse(savedInputs);
+        console.log(parsedInputs);
+        emailInput.value = parsedInputs.email;
+        messageTextarea.textContent = parsedInputs.message;
+    }
 }
 
 },{"lodash.throttle":"bGJVT","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bGJVT":[function(require,module,exports) {

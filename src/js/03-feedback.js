@@ -5,10 +5,13 @@ const form = document.querySelector('.feedback-form');
 let inputsObject = { email: '', message: '' };
 
 function updateLocalStorage() {
+  inputsObject.email = emailInput.value;
+  inputsObject.message = messageTextarea.value;
   localStorage.setItem('feedback-form-state', JSON.stringify(inputsObject));
 }
 
 function currentInput(event) {
+  console.log(event.target);
   if (event.target.type === 'email') {
     inputsObject.email = event.target.value;
     console.log(inputsObject);
@@ -16,6 +19,7 @@ function currentInput(event) {
     inputsObject.message = event.target.value;
     console.log(inputsObject);
   }
+
   updateLocalStorage();
 }
 
@@ -37,11 +41,13 @@ form.addEventListener('submit', onSubmit);
 updateInputs();
 
 function updateInputs() {
-  const savedInputs = localStorage.getItem('feedback-form-state');
-  console.log(savedInputs);
-  const parsedInputs = JSON.parse(savedInputs);
-  console.log(parsedInputs);
+  if (localStorage.getItem('feedback-form-state')) {
+    const savedInputs = localStorage.getItem('feedback-form-state');
+    console.log(savedInputs);
+    const parsedInputs = JSON.parse(savedInputs);
+    console.log(parsedInputs);
 
-  emailInput.value = parsedInputs.email;
-  messageTextarea.textContent = parsedInputs.message;
+    emailInput.value = parsedInputs.email;
+    messageTextarea.textContent = parsedInputs.message;
+  }
 }
