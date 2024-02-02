@@ -7,7 +7,7 @@ import { galleryItems } from './gallery-items.js';
 const gallery = document.querySelector('.gallery');
 
 function createImagesGallery() {
-  gallery.classList.add('gallery');
+  // gallery.classList.add('gallery');
   // console.log(gallery.classList);
   for (const item of galleryItems) {
     let htmlImageString = `<li class="gallery__link">
@@ -24,11 +24,11 @@ function createImagesGallery() {
   }
 }
 //
-createImagesGallery();
 
-new SimpleLightbox('.gallery a', {
+createImagesGallery();
+console.log(gallery);
+
+new SimpleLightbox('.gallery li a', {
   captionDelay: 250,
   captionsData: 'alt',
 });
-
-console.log(galleryItems);

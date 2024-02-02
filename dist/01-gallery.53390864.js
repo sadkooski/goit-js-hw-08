@@ -567,7 +567,7 @@ console.log((0, _simplelightboxDefault.default));
 // Change code below this line
 const gallery = document.querySelector(".gallery");
 function createImagesGallery() {
-    gallery.classList.add("gallery");
+    // gallery.classList.add('gallery');
     // console.log(gallery.classList);
     for (const item of (0, _galleryItemsJs.galleryItems)){
         let htmlImageString = `<li class="gallery__link">
@@ -585,18 +585,18 @@ function createImagesGallery() {
 }
 //
 createImagesGallery();
-new (0, _simplelightboxDefault.default)(".gallery a", {
+console.log(gallery);
+new (0, _simplelightboxDefault.default)(".gallery li a", {
     captionDelay: 250,
     captionsData: "alt"
 });
-console.log((0, _galleryItemsJs.galleryItems));
 
-},{"simplelightbox":"9ydBq","simplelightbox/dist/simple-lightbox.min.css":"kaxSc","./gallery-items.js":"9C7dK","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9ydBq":[function(require,module,exports) {
+},{"simplelightbox":"9ydBq","./gallery-items.js":"9C7dK","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","simplelightbox/dist/simple-lightbox.min.css":"kaxSc"}],"9ydBq":[function(require,module,exports) {
 /*!
 	By André Rinas, www.andrerinas.de
 	Documentation, www.simplelightbox.com
 	Available for use under the MIT License
-	Version 2.13.0
+	Version 2.14.1
 */ var global = arguments[3];
 "use strict";
 Object.defineProperty(exports, "__esModule", {
@@ -926,6 +926,21 @@ var SimpleLightbox = /*#__PURE__*/ function() {
             }
         },
         {
+            key: "getCaptionElement",
+            value: function getCaptionElement(elem) {
+                // look at sibling selector
+                if (this.options.captionSelector.startsWith("+")) {
+                    var selector = this.options.captionSelector.replace(/^\+/, "").trimStart();
+                    var sibling = elem.nextElementSibling;
+                    if (sibling.matches(selector)) return sibling;
+                    return false;
+                } else if (this.options.captionSelector.startsWith(">")) {
+                    var _selector = this.options.captionSelector.replace(/^>/, "").trimStart();
+                    return elem.querySelector(_selector);
+                } else return elem.querySelector(this.options.captionSelector);
+            }
+        },
+        {
             key: "generateQuerySelector",
             value: function generateQuerySelector(elem) {
                 var tagName = elem.tagName, id = elem.id, className = elem.className, parentNode = elem.parentNode;
@@ -1079,7 +1094,7 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                     if (_this2.options.disableScroll) _this2.toggleScrollbar("show");
                     if (_this2.options.htmlClass && _this2.options.htmlClass !== "") document.querySelector("html").classList.remove(_this2.options.htmlClass);
                     document.body.removeChild(_this2.domNodes.wrapper);
-                    document.body.removeChild(_this2.domNodes.overlay);
+                    if (_this2.options.overlay) document.body.removeChild(_this2.domNodes.overlay);
                     _this2.domNodes.additionalHtml = null;
                     _this2.domNodes.download = null;
                     element.dispatchEvent(new Event("closed.simplelightbox"));
@@ -1197,7 +1212,7 @@ var SimpleLightbox = /*#__PURE__*/ function() {
                     });
                     _this5.isOpen = true;
                     var captionContainer, captionText;
-                    if (typeof _this5.options.captionSelector === "string") captionContainer = _this5.options.captionSelector === "self" ? _this5.relatedElements[_this5.currentImageIndex] : document.querySelector(_this5.generateQuerySelector(_this5.relatedElements[_this5.currentImageIndex]) + " " + _this5.options.captionSelector);
+                    if (typeof _this5.options.captionSelector === "string") captionContainer = _this5.options.captionSelector === "self" ? _this5.relatedElements[_this5.currentImageIndex] : _this5.getCaptionElement(_this5.relatedElements[_this5.currentImageIndex]);
                     else if (typeof _this5.options.captionSelector === "function") captionContainer = _this5.options.captionSelector(_this5.relatedElements[_this5.currentImageIndex]);
                     if (_this5.options.captions && captionContainer) {
                         if (_this5.options.captionType === "data") captionText = captionContainer.dataset[_this5.options.captionsData];
@@ -1996,10 +2011,19 @@ var SimpleLightbox = /*#__PURE__*/ function() {
         {
             key: "open",
             value: function open(elem) {
+                var position = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
                 elem = elem || this.elements[0];
                 if (typeof jQuery !== "undefined" && elem instanceof jQuery) elem = elem.get(0);
+                if (position > 0) elem = this.elements[position];
                 this.initialImageIndex = this.elements.indexOf(elem);
                 if (this.initialImageIndex > -1) this.openImage(elem);
+            }
+        },
+        {
+            key: "openPosition",
+            value: function openPosition(position) {
+                var elem = this.elements[position];
+                this.open(elem, position);
             }
         },
         {
@@ -2076,7 +2100,7 @@ var _default = SimpleLightbox;
 exports["default"] = _default;
 global.SimpleLightbox = SimpleLightbox;
 
-},{}],"kaxSc":[function() {},{}],"9C7dK":[function(require,module,exports) {
+},{}],"9C7dK":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "galleryItems", ()=>galleryItems);
@@ -2158,6 +2182,6 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}]},["9VJAZ","6XVkV"], "6XVkV", "parcelRequire4c75")
+},{}],"kaxSc":[function() {},{}]},["9VJAZ","6XVkV"], "6XVkV", "parcelRequire4c75")
 
 //# sourceMappingURL=01-gallery.53390864.js.map
